@@ -10,6 +10,7 @@ BEGIN
     -- Obter a data da inserção da reserva
     SELECT @data = inicio_uso FROM inserted;
 
+
     -- Obter o próximo número sequencial para o ID da reserva
     SELECT @numero = ISNULL(MAX(CAST(SUBSTRING(IDR, 5, 4) AS INT)), 0) + 1
     FROM Reserva
@@ -20,7 +21,7 @@ BEGIN
 
     -- Inserir a nova reserva com o ID gerado
     INSERT INTO Reserva (IDR, timestamp, inicio_uso, fim_uso, estado_reserva, IDU, IDRQ)
-    SELECT @IDR, timestamp, inicio_uso, fim_uso, estado_reserva, IDU, IDRQ
+    SELECT @IDR, GETDATE(), inicio_uso, fim_uso, estado_reserva, IDU, IDRQ
     FROM inserted;
 END;
 GO
