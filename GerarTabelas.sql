@@ -13,14 +13,18 @@ CREATE TABLE Utilizador (
 );
 --Notas: se for PD, é sempre máxima e nunca muda
 
-CREATE TABLE Requisicao ( -- criada quando uma reserva passa para o estado 'Satisfied'    , mesmo equipamentos levantados sem reserva geram requisicao!!
-  IDRQ INT IDENTITY(1,1) NOT NULL, -- Número único para cada requisição, gerado automaticamente
-  estado_req VARCHAR(50) NOT NULL, -- Active ou Closed (CLOSED até data_devolução deixar de ser NULL)
-  data_devolucao DATE, -- NULL até serem devolvidos os equipamentos              SE É DEPOIS DO DEFINIDO NA RESERVA-> PUNIÇÃO
-  data_levantamento DATE NOT NULL,
-  PRIMARY KEY (IDRQ),
-  CHECK (estado_req IN ('Active', 'Closed')), -- Estados válidos
-  CHECK (data_levantamento <= data_devolucao) -- Data de levantamento não pode ser depois da devolução
+-- Criar tabela Reserva
+CREATE TABLE Reserva (
+  IDR CHAR(8) NOT NULL, -- Formato yyyySSSS, onde yyyy é o ano e SSSS é sequencial
+  timestamp DATETIME NOT NULL, -- Data e hora da criacao da reserva
+  inicio_uso DATETIME NOT NULL, -- Data onde utilizador quer os recursos         UTILIZADOR INDICA
+  fim_uso DATETIME NOT NULL, -- Até quando quer os recursos                      UTILIZADOR INDICA
+  estado_reserva VARCHAR(50) NOT NULL, -- Active, Waiting, etc.
+  IDU CHAR(10) NOT NULL, -- Referência ao utilizador responsavel pela reserva
+  IDRQ INT NOT NULL, -- Referência à requisição
+  PRIMARY KEY (IDR),
+  FOREIGN KEY (IDU) REFERENCES Utilizador(IDU),
+  CHECK (estado_reserva IN ('Active', 'Satisfied', 'Canceled', 'Waiting', 'Forgotten')), -- Estados válidos
 );
 
 -- Criar tabela Historico_Prioridade
@@ -39,20 +43,18 @@ CREATE TABLE Historico_Prioridade (
   CHECK (prioridade_atual IN ('Máxima', 'Acima da Média', 'Média', 'Abaixo da Média', 'Mínima'))
 );
 
--- Criar tabela Reserva
-CREATE TABLE Reserva (
-  IDR CHAR(8) NOT NULL, -- Formato yyyySSSS, onde yyyy é o ano e SSSS é sequencial
-  timestamp DATETIME NOT NULL, -- Data e hora da criacao da reserva
-  inicio_uso DATETIME NOT NULL, -- Data onde utilizador quer os recursos         UTILIZADOR INDICA
-  fim_uso DATETIME NOT NULL, -- Até quando quer os recursos                      UTILIZADOR INDICA
-  estado_reserva VARCHAR(50) NOT NULL, -- Active, Waiting, etc.
-  IDU CHAR(10) NOT NULL, -- Referência ao utilizador responsavel pela reserva
-  IDRQ INT NOT NULL, -- Referência à requisição
-  PRIMARY KEY (IDR),
-  FOREIGN KEY (IDU) REFERENCES Utilizador(IDU),
-  FOREIGN KEY (IDRQ) REFERENCES Requisicao(IDRQ),
-  CHECK (estado_reserva IN ('Active', 'Satisfied', 'Canceled', 'Waiting', 'Forgotten')), -- Estados válidos
+CREATE TABLE Requisicao ( -- criada quando uma reserva passa para o estado 'Satisfied'    , mesmo equipamentos levantados sem reserva geram requisicao!!
+  IDRQ INT IDENTITY(1,1) NOT NULL, -- Número único para cada requisição, gerado automaticamente
+  estado_req VARCHAR(50) NOT NULL, -- Active ou Closed (CLOSED até data_devolução deixar de ser NULL)
+  data_devolucao DATE, -- NULL até serem devolvidos os equipamentos              SE É DEPOIS DO DEFINIDO NA RESERVA-> PUNIÇÃO
+  data_levantamento DATE NOT NULL,
+  IDR INT NOT NULL, --Referencia a reserva
+  PRIMARY KEY (IDRQ),
+   FOREIGN KEY (IDR) REFERENCES Reserva(IDR),
+  CHECK (estado_req IN ('Active', 'Closed')), -- Estados válidos
+  CHECK (data_levantamento <= data_devolucao) -- Data de levantamento não pode ser depois da devolução
 );
+
 
 -- Criar tabela Historico_Estado
 CREATE TABLE Historico_Estado (
