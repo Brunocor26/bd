@@ -1,79 +1,85 @@
 CREATE TABLE Utilizador (
-  IDU CHAR(10) NOT NULL, -- Formato XX_Nome, onde XX é o prefixo do tipo de utilizador
-  tipo_utilizador CHAR(2) NOT NULL, -- PR, RS, BS, etc.
+  IDU CHAR(10) NOT NULL, -- Formato XX_Nome, onde XX Ã© o prefixo do tipo de utilizador, gerado automaticamente (trigger)
+  tipo_utilizador CHAR(2) NOT NULL,
+  nome VARCHAR(50) NOT NULL, -- Nome completo do utilizador  
   telefone INT NOT NULL,
   email VARCHAR(50) NOT NULL,
-  prioridade_corrente VARCHAR(50) NOT NULL, -- Máxima, Acima da Média, etc.
+  prioridade_corrente VARCHAR(50) NOT NULL, -- Inicialmente igual a classe_prioridade, depois altera
   classe_prioridade VARCHAR(50) NOT NULL, -- Prioridade fixa por tipo de utilizador
-  nome VARCHAR(50) NOT NULL, -- Nome completo do utilizador
   PRIMARY KEY (IDU),
-  CHECK (tipo_utilizador IN ('PR', 'RS', 'BS', 'MS', 'DS', 'SF', 'XT')), -- Tipos válidos
-  CHECK (prioridade_corrente IN ('Máxima', 'Acima da Média', 'Média', 'Abaixo da Média', 'Mínima')),
-  CHECK (classe_prioridade IN ('Máxima', 'Acima da Média', 'Média', 'Abaixo da Média', 'Mínima'))
+  CHECK (tipo_utilizador IN ('PD', 'PR', 'RS', 'BS', 'MS', 'DS', 'SF', 'XT')), -- Tipos vÃ¡lidos
+  CHECK (prioridade_corrente IN ('MÃ¡xima', 'Acima da MÃ©dia', 'MÃ©dia', 'Abaixo da MÃ©dia', 'MÃ­nima')),
+  CHECK (classe_prioridade IN ('MÃ¡xima', 'Acima da MÃ©dia', 'MÃ©dia', 'Abaixo da MÃ©dia', 'MÃ­nima'))
 );
+--Notas: se for PD, Ã© sempre mÃ¡xima e nunca muda
 
-CREATE TABLE Requisicao (
-  IDRQ INT IDENTITY(1,1) NOT NULL, -- Número único para cada requisição
-  estado_req VARCHAR(50) NOT NULL, -- Active ou Closed
-  data_devolucao DATE NOT NULL,
+CREATE TABLE Requisicao ( -- criada quando uma reserva passa para o estado 'Satisfied'    , mesmo equipamentos levantados sem reserva geram requisicao!!
+  IDRQ INT IDENTITY(1,1) NOT NULL, -- NÃºmero Ãºnico para cada requisiÃ§Ã£o, gerado automaticamente
+  estado_req VARCHAR(50) NOT NULL, -- Active ou Closed (CLOSED atÃ© data_devoluÃ§Ã£o deixar de ser NULL)
+  data_devolucao DATE, -- NULL atÃ© serem devolvidos os equipamentos              SE Ã‰ DEPOIS DO DEFINIDO NA RESERVA-> PUNIÃ‡ÃƒO
   data_levantamento DATE NOT NULL,
   PRIMARY KEY (IDRQ),
-  CHECK (estado_req IN ('Active', 'Closed')), -- Estados válidos
-  CHECK (data_levantamento <= data_devolucao) -- Data de levantamento não pode ser depois da devolução
+  CHECK (estado_req IN ('Active', 'Closed')), -- Estados vÃ¡lidos
+  CHECK (data_levantamento <= data_devolucao) -- Data de levantamento nÃ£o pode ser depois da devoluÃ§Ã£o
 );
 
 -- Criar tabela Historico_Prioridade
 CREATE TABLE Historico_Prioridade (
-  IDHP INT IDENTITY(1,1) NOT NULL, -- Número único para cada histórico
-  prioridade_anterior VARCHAR(50) NOT NULL,
-  prioridade_atual VARCHAR(50) NOT NULL,
-  motivo VARCHAR(50) NOT NULL, -- Motivo da alteração de prioridade
-  data DATE NOT NULL,
-  IDU CHAR(10) NOT NULL, -- Referência ao utilizador
+  IDHP INT IDENTITY(1,1) NOT NULL, -- NÃºmero Ãºnico para cada entrada no histÃ³rico
+  prioridade_anterior VARCHAR(50) NOT NULL, -- automatico a partir do idu
+  prioridade_nova VARCHAR(50) NOT NULL,
+  motivo VARCHAR(50) NOT NULL, -- Motivo da alteraÃ§Ã£o de prioridade
+  punicao INT NOT NULL, -- 0 se Ã© recompensa, 1 se Ã© puniÃ§Ã£o
+  data DATE NOT NULL,  --data da entrada
+  IDU CHAR(10) NOT NULL, -- ReferÃªncia ao utilizador
   PRIMARY KEY (IDHP),
-  FOREIGN KEY (IDU) REFERENCES Utilizador(IDU), -- Ligação ao utilizador
-  CHECK (prioridade_anterior IN ('Máxima', 'Acima da Média', 'Média', 'Abaixo da Média', 'Mínima')),
-  CHECK (prioridade_atual IN ('Máxima', 'Acima da Média', 'Média', 'Abaixo da Média', 'Mínima'))
+  FOREIGN KEY (IDU) REFERENCES Utilizador(IDU), -- LigaÃ§Ã£o ao utilizador
+  CHECK (prioridade_anterior IN ('MÃ¡xima', 'Acima da MÃ©dia', 'MÃ©dia', 'Abaixo da MÃ©dia', 'MÃ­nima')),
+  CHECK (punicao IN (0, 1),
+  CHECK (prioridade_atual IN ('MÃ¡xima', 'Acima da MÃ©dia', 'MÃ©dia', 'Abaixo da MÃ©dia', 'MÃ­nima'))
 );
 
 -- Criar tabela Reserva
 CREATE TABLE Reserva (
-  IDR CHAR(8) NOT NULL, -- Formato yyyySSSS, onde yyyy é o ano e SSSS é sequencial
-  timestamp DATETIME NOT NULL, -- Data e hora da criação da reserva
-  inicio_uso DATE NOT NULL,
-  duracao VARCHAR(50) NOT NULL, -- Ex.: '2 horas'
+  IDR CHAR(8) NOT NULL, -- Formato yyyySSSS, onde yyyy Ã© o ano e SSSS Ã© sequencial
+  timestamp DATETIME NOT NULL, -- Data e hora da criacao da reserva
+  inicio_uso DATETIME NOT NULL, -- Data onde utilizador quer os recursos         UTILIZADOR INDICA
+  fim_uso DATETIME NOT NULL, -- AtÃ© quando quer os recursos                      UTILIZADOR INDICA
   estado_reserva VARCHAR(50) NOT NULL, -- Active, Waiting, etc.
-  IDU CHAR(10) NOT NULL, -- Referência ao utilizador
-  IDRQ INT NOT NULL, -- Referência à requisição
+  IDU CHAR(10) NOT NULL, -- ReferÃªncia ao utilizador responsavel pela reserva
+  IDRQ INT NOT NULL, -- ReferÃªncia Ã  requisiÃ§Ã£o
   PRIMARY KEY (IDR),
   FOREIGN KEY (IDU) REFERENCES Utilizador(IDU),
   FOREIGN KEY (IDRQ) REFERENCES Requisicao(IDRQ),
-  CHECK (estado_reserva IN ('Active', 'Satisfied', 'Canceled', 'Waiting', 'Forgotten')), -- Estados válidos
+  CHECK (estado_reserva IN ('Active', 'Satisfied', 'Canceled', 'Waiting', 'Forgotten')), -- Estados vÃ¡lidos
 );
 
 -- Criar tabela Historico_Estado
 CREATE TABLE Historico_Estado (
-  IDHE INT IDENTITY(1,1) NOT NULL, -- Número único para cada registro de histórico
-  estado_anterior VARCHAR(50) NOT NULL,
-  motivo VARCHAR(50) NOT NULL, -- Motivo da alteração de estado
-  estado_atual VARCHAR(50) NOT NULL,
+  IDHE INT IDENTITY(1,1) NOT NULL, -- NÃºmero Ãºnico sequencial para cada registo de histÃ³rico
+  estado_anterior VARCHAR(50) NOT NULL, -- Retirado automaticamente
+  motivo VARCHAR(50) NOT NULL, -- Motivo da alteraÃ§Ã£o de estado
+  estado_novo VARCHAR(50) NOT NULL, -- Se estado_anterior = active -> satisfied ou canceled ou forgotten ou waiting; se = waiting-> outros todos; se = um dos outros, nÃ£o pode mexer mais
   data_alteracao DATE NOT NULL,
-  IDR CHAR(8) NOT NULL, -- Referência à reserva
+  IDR CHAR(8) NOT NULL, -- ReferÃªncia Ã  reserva
   PRIMARY KEY (IDHE),
   FOREIGN KEY (IDR) REFERENCES Reserva(IDR),
-  CHECK (estado_anterior IN ('Active', 'Satisfied', 'Canceled', 'Waiting', 'Forgotten')),
-  CHECK (estado_atual IN ('Active', 'Satisfied', 'Canceled', 'Waiting', 'Forgotten'))
+  CHECK (estado_anterior IN ('Active', 'Waiting')),
+  CHECK (estado_novo IN ('Active', 'Satisfied', 'Canceled', 'Waiting', 'Forgotten'))
 );
 
 -- Criar tabela Equipamento
 CREATE TABLE Equipamento (
-  IDE INT IDENTITY(1,1) NOT NULL, -- Número único para cada equipamento
-  descricao VARCHAR(50) NOT NULL, -- Descrição do equipamento
-  estado_eq VARCHAR(50) NOT NULL, -- Disponível, Em Uso, etc.
-  IDR CHAR(8) NOT NULL, -- Referência à reserva
-  IDRQ INT NOT NULL, -- Referência à requisição
-  PRIMARY KEY (IDE),
+  IDE INT IDENTITY(1,1) NOT NULL, -- NÃºmero Ãºnico para cada equipamento
+  essencial INT, --1 se Ã© essencial, 0 se nÃ£o Ã©, NULL se este equipamento estÃ¡ disponÃ­vel
+  estado_eq VARCHAR(50) NOT NULL, -- DisponÃ­vel, Em Uso, etc.
+  IDR CHAR(8) NOT NULL, -- ReferÃªncia Ã  reserva
+  IDU CHAR(10) NOT NULL, --Referencia ao utilizador
+  IDRQ INT NOT NULL, -- ReferÃªncia Ã  requisiÃ§Ã£o
+  PRIMARY KEY (IDE), 
   FOREIGN KEY (IDR) REFERENCES Reserva(IDR),
   FOREIGN KEY (IDRQ) REFERENCES Requisicao(IDRQ),
-  CHECK (estado_eq IN ('Disponível', 'Em Uso', 'Reservado')) -- Estados válidos
+  FOREIGN KEY (IDU) REFERENCES Utilizador(IDU), 
+  CHECK (estado_eq IN ('DisponÃ­vel', 'Em Uso', 'Reservado')), -- Estados vÃ¡lidos
+  CHECK (essencial IN (0, 1, NULL)) -- Estados vÃ¡lidos
 );
