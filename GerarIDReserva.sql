@@ -7,20 +7,20 @@ BEGIN
     DECLARE @data DATE;
     DECLARE @numero INT;
 
-    -- Obter a data da inserção da reserva
+    -- Obter a data da inserÃ§Ã£o da reserva
     SELECT @data = inicio_uso FROM inserted;
 
-    -- Obter o próximo número sequencial para o ID da reserva
+    -- Obter o prÃ³ximo nÃºmero sequencial para o ID da reserva
     SELECT @numero = ISNULL(MAX(CAST(SUBSTRING(IDR, 5, 4) AS INT)), 0) + 1
     FROM Reserva
     WHERE YEAR(inicio_uso) = YEAR(@data);
 
-    -- Gerar o IDR com a função MakeID
+    -- Gerar o IDR com a funÃ§Ã£o MakeID
     SET @IDR = dbo.MakeID(@data, @numero);
 
     -- Inserir a nova reserva com o ID gerado
-    INSERT INTO Reserva (IDR, timestamp, inicio_uso, duracao, estado_reserva, IDU, IDRQ)
-    SELECT @IDR, timestamp, inicio_uso, duracao, estado_reserva, IDU, IDRQ
+    INSERT INTO Reserva (IDR, timestamp, inicio_uso, fim_uso, estado_reserva, IDU, IDRQ)
+    SELECT @IDR, timestamp, inicio_uso, fim_uso, estado_reserva, IDU, IDRQ
     FROM inserted;
 END;
 GO
