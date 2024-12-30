@@ -1,0 +1,65 @@
+CREATE PROCEDURE CriarReserva
+    @inicio_uso DATETIME,
+    @fim_uso DATETIME,
+    @IDU VARCHAR(10),
+    @Equipamentos NVARCHAR(MAX) -- JSON com os IDE's dos equipamentos [{IDE: 1, essencial: 1}, ...]
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Variáveis para a reserva
+        DECLARE @GeneratedIDR CHAR(8) = FORMAT(GETDATE(), 'yyyy') + FORMAT(NEXT VALUE FOR SequenciaReserva, 'D4');
+        DECLARE @estado_reserva VARCHAR(50);
+
+        -- Verificar se todos os equipamentos estão disponíveis
+        DECLARE @EquipamentoTable TABLE (IDE INT, essencial INT);
+        INSERT INTO @EquipamentoTable (IDE, essencial)
+        SELECT IDE, essencial
+        FROM OPENJSON(@Equipamentos)
+        WITH (IDE INT, essencial INT);
+
+        DECLARE @EquipamentoIndisponivel INT = (
+            SELECT COUNT(*)
+            FROM Equipamento e
+            JOIN @EquipamentoTable et ON e.IDE = et.IDE
+            WHERE e.estado_eq <> 'Disponível'
+            OR EXISTS (
+                SELECT 1
+                FROM Reserva_Equipamento re
+                JOIN Reserva r ON re.IDR = r.IDR
+                WHERE re.IDE = e.IDE
+                AND r.inicio_uso < @fim_uso AND r.fim_uso > @inicio_uso
+            )
+        );
+
+        -- Determinar o estado da reserva
+        SET @estado_reserva = CASE WHEN @EquipamentoIndisponivel = 0 THEN 'Active' ELSE 'Waiting' END;
+
+        -- Inserir a reserva
+        INSERT INTO Reserva (IDR, [timestamp], inicio_uso, fim_uso, estado_reserva, IDU)
+        VALUES (@GeneratedIDR, GETDATE(), @inicio_uso, @fim_uso, @estado_reserva, @IDU);
+
+        -- Inserir os equipamentos na tabela Reserva_Equipamento
+        INSERT INTO Reserva_Equipamento (IDE, IDR, essencial, IDU)
+        SELECT IDE, @GeneratedIDR, essencial, @IDU
+        FROM @EquipamentoTable;
+
+        -- Atualizar estado dos equipamentos para 'Reservado' se a reserva for 'Active'
+        IF @estado_reserva = 'Active'
+        BEGIN
+            UPDATE Equipamento
+            SET estado_eq = 'Reservado'
+            WHERE IDE IN (SELECT IDE FROM @EquipamentoTable);
+        END;
+
+        COMMIT TRANSACTION;
+
+        PRINT 'Reserva criada com sucesso.';
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        PRINT 'Erro ao criar a reserva: ' + ERROR_MESSAGE();
+    END CATCH
+END;
+GO
