@@ -6,9 +6,17 @@ BEGIN
     IF EXISTS (SELECT 1 FROM Reserva WHERE IDR = @ReservaID AND estado_reserva = 'Satisfied')
     BEGIN
         BEGIN TRY
-            -- Inserir a requisição baseada na reserva
+			-- armazenar o valor de inicio_uso
+            DECLARE @InicioUso DATETIME;
+
+            -- obter o valor de inicio_uso da reserva
+            SELECT @InicioUso = inicio_uso 
+            FROM Reserva
+            WHERE IDR = @ReservaID;
+
+            -- inserir a requisição baseada na reserva
             INSERT INTO Requisicao (estado_req, data_devolucao, data_levantamento, IDR)
-            VALUES ('Active', NULL, GETDATE(), @ReservaID);
+            VALUES ('Active', NULL, @InicioUso, @ReservaID);
 
             PRINT 'Requisição criada com sucesso.';
         END TRY
