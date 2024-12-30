@@ -97,7 +97,7 @@ CREATE TABLE Reserva_Equipamento (
   IDR VARCHAR(8), -- Referência à reserva
   essencial INT, --1 se é essencial, 0 se não é, NULL se este equipamento está disponível
   IDU VARCHAR(10), --Referencia ao utilizador
-  IDRQ INT, -- Referência à requisiçãO
+  IDRQ INT, -- Referência à requisição
   PRIMARY KEY (IDRE),
   FOREIGN KEY (IDE) REFERENCES Equipamento(IDE),
   FOREIGN KEY (IDR) REFERENCES Reserva(IDR),
