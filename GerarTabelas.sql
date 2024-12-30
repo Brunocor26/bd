@@ -21,7 +21,6 @@ CREATE TABLE Reserva (
   fim_uso DATETIME NOT NULL, -- Até quando quer os recursos                      UTILIZADOR INDICA
   estado_reserva VARCHAR(50) NOT NULL, -- Active, Waiting, etc.
   IDU VARCHAR(10) NOT NULL, -- Referência ao utilizador responsavel pela reserva
-  IDRQ INT NOT NULL, -- Referência à requisição
   PRIMARY KEY (IDR),
   FOREIGN KEY (IDU) REFERENCES Utilizador(IDU),
   CHECK (estado_reserva IN ('Active', 'Satisfied', 'Canceled', 'Waiting', 'Forgotten')), -- Estados válidos
