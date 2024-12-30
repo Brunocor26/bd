@@ -75,7 +75,8 @@ CREATE TABLE Historico_Estado (
 
 -- Criar tabela Equipamento
 CREATE TABLE Equipamento (
-  IDE INT IDENTITY(1,1) NOT NULL, -- Número único para cada equipamento
+  IDE INT IDENTITY(1,1) NOT NULL, -- Número unico para cada equipamento
+  descricao VARCHAR(50) NOT NULL, -- Descricao do equipamento
   essencial INT, --1 se é essencial, 0 se não é, NULL se este equipamento está disponível
   estado_eq VARCHAR(50) NOT NULL, -- Disponível, Em Uso, etc.
   IDR VARCHAR(8), -- Referência à reserva
