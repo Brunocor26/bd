@@ -49,13 +49,10 @@ CREATE TABLE Requisicao ( -- criada quando uma reserva passa para o estado 'Sati
   data_levantamento DATE NOT NULL,
   IDR VARCHAR(8) NOT NULL, --Referencia a reserva
   PRIMARY KEY (IDRQ),
-   FOREIGN KEY (IDR) REFERENCES Reserva(IDR),
+  FOREIGN KEY (IDR) REFERENCES Reserva(IDR),
   CHECK (estado_req IN ('Active', 'Closed')), -- Estados válidos
   CHECK (data_levantamento <= data_devolucao) -- Data de levantamento não pode ser depois da devolução
 );
-
-
-
 
 -- Criar tabela Historico_Estado
 CREATE TABLE Historico_Estado (
@@ -81,10 +78,30 @@ CREATE TABLE Equipamento (
   IDR VARCHAR(8), -- Referência à reserva
   IDU VARCHAR(10), --Referencia ao utilizador
   IDRQ INT, -- Referência à requisição
-  PRIMARY KEY (IDE), 
+  PRIMARY KEY (IDE)
+);
+
+-- Criar tabela Equipamento
+CREATE TABLE Equipamento (
+  IDE INT IDENTITY(1,1) NOT NULL, -- Número unico para cada equipamento
+  descricao VARCHAR(50) NOT NULL, -- Descricao do equipamento
+  estado_eq VARCHAR(50) NOT NULL, -- Disponível, Em Uso, etc.
+  PRIMARY KEY (IDE),
+  CHECK (estado_eq IN ('Disponível', 'Em Uso', 'Reservado')) -- Estados válidos
+);
+
+-- Criar tabela Reserva_Equipamento
+CREATE TABLE Reserva_Equipamento (
+  IDRE INT IDENTITY(1,1) NOT NULL, -- Número unico para cada equipamento
+  IDE INT, --Referencia ao equipamento
+  IDR VARCHAR(8), -- Referência à reserva
+  essencial INT, --1 se é essencial, 0 se não é, NULL se este equipamento está disponível
+  IDU VARCHAR(10), --Referencia ao utilizador
+  IDRQ INT, -- Referência à requisiçãO
+  PRIMARY KEY (IDRE),
+  FOREIGN KEY (IDE) REFERENCES Equipamento(IDE),
   FOREIGN KEY (IDR) REFERENCES Reserva(IDR),
   FOREIGN KEY (IDRQ) REFERENCES Requisicao(IDRQ),
   FOREIGN KEY (IDU) REFERENCES Utilizador(IDU), 
-  CHECK (estado_eq IN ('Disponível', 'Em Uso', 'Reservado')), -- Estados válidos
   CHECK (essencial IN (0, 1, NULL)) -- Estados válidos
 );
