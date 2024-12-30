@@ -1,0 +1,13 @@
+CREATE TRIGGER trg_UpdateEquipamentoDisponivel
+ON Reserva_Equipamento
+AFTER DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Atualizar o estado do equipamento para 'Disponível' se não estiver mais na tabela Reserva_Equipamento
+    UPDATE Equipamento
+    SET estado_eq = 'Disponível'
+    WHERE IDE NOT IN (SELECT DISTINCT IDE FROM Reserva_Equipamento);
+END;
+GO
