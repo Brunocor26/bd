@@ -1,0 +1,40 @@
+CREATE TRIGGER trg_UpdateReserva
+ON Reserva
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Verificar quais registros foram atualizados
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN deleted d ON i.IDR = d.IDR
+        WHERE i.estado_reserva = 'Satisfied' AND d.estado_reserva != 'Satisfied'
+    )
+    BEGIN
+        -- Chamar o procedimento para cada reserva que mudou para 'Satisfied'
+        DECLARE @ReservaID CHAR(8);
+
+        DECLARE cursor_satisfied CURSOR FOR
+        SELECT i.IDR
+        FROM inserted i
+        JOIN deleted d ON i.IDR = d.IDR
+        WHERE i.estado_reserva = 'Satisfied' AND d.estado_reserva != 'Satisfied';
+
+        OPEN cursor_satisfied;
+        FETCH NEXT FROM cursor_satisfied INTO @ReservaID;
+
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            -- Executar o procedimento para cada reserva
+            EXEC Reserve2Requisition @ReservaID;
+
+            FETCH NEXT FROM cursor_satisfied INTO @ReservaID;
+        END;
+
+        CLOSE cursor_satisfied;
+        DEALLOCATE cursor_satisfied;
+    END
+END;
+GO
