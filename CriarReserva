@@ -8,11 +8,14 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        -- Variáveis para a reserva
-        DECLARE @GeneratedIDR CHAR(8) = FORMAT(GETDATE(), 'yyyy') + FORMAT(NEXT VALUE FOR SequenciaReserva, 'D4');
+        -- Gerar IDR único combinando ano atual e timestamp
+        DECLARE @GeneratedIDR CHAR(8);
+        SET @GeneratedIDR = FORMAT(GETDATE(), 'yyyy') + RIGHT('0000' + CAST(ABS(CHECKSUM(NEWID())) % 10000 AS VARCHAR), 4);
+
+        -- Variáveis para determinar o estado da reserva
         DECLARE @estado_reserva VARCHAR(50);
 
-        -- Verificar se todos os equipamentos estão disponíveis
+        -- Verificar se os equipamentos estão disponíveis
         DECLARE @EquipamentoTable TABLE (IDE INT, essencial INT);
         INSERT INTO @EquipamentoTable (IDE, essencial)
         SELECT IDE, essencial
