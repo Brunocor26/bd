@@ -1,15 +1,14 @@
-CREATE FUNCTION MakeID (@data DATE, @numero INT)
+CREATE FUNCTION MakeID (@numero INT)
 RETURNS CHAR(8)
 AS
 BEGIN
     DECLARE @ano VARCHAR(4);
-    DECLARE @id_ano INT;
     DECLARE @id_reserva VARCHAR(8);
 
-    -- Extrair o ano da data fornecida
-    SET @ano = YEAR(@data);
-    
-    -- Gerar o ID sequencial (n�mero fornecido)
+    -- Obter o ano atual
+    SET @ano = YEAR(GETDATE());
+
+    -- Gerar o ID sequencial com o ano e o número da reserva (com zero à esquerda, se necessário)
     SET @id_reserva = CONCAT(@ano, RIGHT('0000' + CAST(@numero AS VARCHAR(4)), 4));
 
     RETURN @id_reserva;
