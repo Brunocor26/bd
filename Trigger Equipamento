@@ -1,0 +1,15 @@
+CREATE TRIGGER trg_EquipamentoInicial
+ON Equipamento
+INSTEAD OF INSERT
+AS
+BEGIN
+    -- Evita que mensagens adicionais interfiram nos resultados.
+    SET NOCOUNT ON;
+
+    -- Insere os dados com o estado_eq definido como 'Disponível'.
+    INSERT INTO Equipamento (descricao, estado_eq)
+    SELECT descricao, 'Disponível'
+    FROM inserted;
+END;
+GO
+ 
