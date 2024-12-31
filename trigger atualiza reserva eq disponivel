@@ -1,0 +1,21 @@
+ CREATE TRIGGER trg_UpdateReservaStatus
+ON Reserva_Equipamento
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Atualiza o estado da reserva para 'Active' se todos os equipamentos essenciais estiverem disponíveis
+    UPDATE R
+    SET estado_reserva = 'Active'
+    FROM Reserva R
+    WHERE R.IDR IN (
+        SELECT RE.IDR
+        FROM Reserva_Equipamento RE
+        INNER JOIN Equipamento E ON RE.IDE = E.IDE
+        WHERE RE.essencial = 1
+        GROUP BY RE.IDR
+        HAVING COUNT(CASE WHEN E.estado_eq != 'Disponível' THEN 1 END) = 0
+    );
+END;
+GO
