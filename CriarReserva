@@ -8,28 +8,12 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        -- Variáveis para o ano atual e o número sequencial
-        DECLARE @AnoAtual INT = YEAR(GETDATE());
-        DECLARE @NumeroSequencia INT;
+        -- Variável para o IDR gerado
         DECLARE @GeneratedIDR CHAR(8);
 
-        -- Verificar ou inicializar o ano na tabela ControleSequenciaReserva
-        IF NOT EXISTS (SELECT 1 FROM ControleSequenciaReserva WHERE Ano = @AnoAtual)
-        BEGIN
-            INSERT INTO ControleSequenciaReserva (Ano, NumeroSequencia)
-            VALUES (@AnoAtual, 0);
-        END
-
-        -- Incrementar o número de sequência e obter o novo valor
-        UPDATE ControleSequenciaReserva
-        SET NumeroSequencia = NumeroSequencia + 1
-        OUTPUT inserted.NumeroSequencia
-        WHERE Ano = @AnoAtual;
-
-        SET @NumeroSequencia = (SELECT NumeroSequencia FROM ControleSequenciaReserva WHERE Ano = @AnoAtual);
-
-        -- Gerar o IDR no formato XXXXYYYY
-        SET @GeneratedIDR = FORMAT(@AnoAtual, '0000') + FORMAT(@NumeroSequencia, '0000');
+        -- Gerar o IDR no formato XXXXYYYY (sem controle de sequência)
+        -- Aqui, estamos convertendo o NEWID() para uma string, pegando os primeiros 4 caracteres de NEWID()
+        SET @GeneratedIDR = FORMAT(YEAR(GETDATE()), '0000') + LEFT(CONVERT(VARCHAR(36), NEWID()), 4); 
 
         -- Verificar estado da reserva
         DECLARE @estado_reserva VARCHAR(50);
@@ -85,3 +69,4 @@ BEGIN
     END CATCH
 END;
 GO
+
